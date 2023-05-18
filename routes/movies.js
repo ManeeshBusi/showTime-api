@@ -7,27 +7,47 @@ const PAGE_SIZE = 8;
 
 router.post("/add");
 
-router.get("/watchlist/:userId", async (req, res) => {
+router.get("/lists/:userId", async (req, res) => {
   const { userId } = req.params;
   try {
-    const user = await User.findById(userId).populate("watchlist");
-    res.status(200).json({ watchlist: user.watchlist });
+    const user = await User.findById(userId).populate([
+      { path: "watchlist", select: "img tmdbId title bg" },
+      { path: "favorite", select: "img tmdbId title bg" },
+    ]);
+    res.status(200).json({ watchlist: user.watchlist, favorite: user.favorite });
   } catch (e) {
     console.log("Error fetching watchlist", e);
     res.status(500).json(e);
   }
 });
 
-router.get("/favorite/:userId", async (req, res) => {
-  const { userId } = req.params;
-  try {
-    const user = await User.findById(userId).populate("favorite");
-    res.status(200).json({ favorite: user.favorite });
-  } catch (e) {
-    console.log("Error fetching favorite", e);
-    res.status(500).json(e);
-  }
-});
+// router.get("/watchlist/:userId", async (req, res) => {
+//   const { userId } = req.params;
+//   try {
+//     const user = await User.findById(userId).populate({
+//       path: "watchlist",
+//       select: "img tmdbId",
+//     });
+//     res.status(200).json({ watchlist: user.watchlist });
+//   } catch (e) {
+//     console.log("Error fetching watchlist", e);
+//     res.status(500).json(e);
+//   }
+// });
+
+// router.get("/favorite/:userId", async (req, res) => {
+//   const { userId } = req.params;
+//   try {
+//     const user = await User.findById(userId).populate({
+//       path: "favorite",
+//       select: "img tmdbId",
+//     });
+//     res.status(200).json({ favorite: user.favorite });
+//   } catch (e) {
+//     console.log("Error fetching favorite", e);
+//     res.status(500).json(e);
+//   }
+// });
 
 router.post("/add/:list/:userId", async (req, res) => {
   const { userId, list } = req.params;

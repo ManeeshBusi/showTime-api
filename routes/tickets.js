@@ -22,7 +22,7 @@ router.post("/add/:userId", async (req, res) => {
   const { userId } = req.params;
   const { title, date, time, location, screen, seats } = req.body;
   const movieId = await getMovieDetails(title, date);
-  const datetime = moment(`${date} ${time}`).unix();
+  const datetime = moment(date).unix();
   const ticketDetails = {
     date,
     time,

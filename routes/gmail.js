@@ -27,7 +27,7 @@ router.get("/messages/:userId", async (req, res) => {
     });
 
     const messages = response.data.messages;
-    var ticketsList = [];
+    var ticketsList = []; 
     for (var i = 0; i < messages.length - 25; i++) {
       const messageData = await gmail.users.messages.get({
         userId: "me",
@@ -75,7 +75,7 @@ router.get("/latest/:userId", async (req, res) => {
     const user = await getUser(userId);
     const movie = await getLastMovie(userId);
     const time = timeFormat(movie[0].time);
-    const datetime = moment(`${movie[0].date} ${time}`).unix();
+    const datetime = moment(movie[0].date).unix();
 
     oAuth2Client.setCredentials({ access_token: user.accessToken });
 
