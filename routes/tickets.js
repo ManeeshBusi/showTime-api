@@ -21,22 +21,23 @@ router.get("/:userId", async (req, res) => {
 router.post("/add/:userId", async (req, res) => {
   const { userId } = req.params;
   const { title, date, time, location, screen, seats } = req.body;
-  const movieId = await getMovieDetails(title, date);
-  const datetime = moment(date).unix();
-  const ticketDetails = {
-    date,
-    time,
-    location,
-    screen,
-    seats,
-    movieId,
-    userId,
-    datetime,
-  };
-  const ticket = new Ticket(ticketDetails);
   try {
-    const savedTicket = await ticket.save();
-    res.status(200).json(savedTicket);
+    const movieId = await getMovieDetails(title, date);
+    const datetime = moment(date).unix();
+    const ticketDetails = {
+      date,
+      time,
+      location,
+      screen,
+      seats,
+      movieId,
+      userId,
+      datetime,
+    };
+
+    const savedTicket = await new Ticket(ticketDetails).save();
+    const populatedTicket = await Ticket.find({_id: savedTicket._id}).populate("movieId");
+    res.status(200).send(populatedTicket);
   } catch (e) {
     console.log("Error adding ticket", e);
     res.status(500).json(e);
