@@ -75,8 +75,8 @@ router.get("/latest/:userId", async (req, res) => {
     const user = await getUser(userId);
     const movie = await getLastMovie(userId);
     const time = timeFormat(movie[0].time);
-    const datetime = moment(movie[0].date).unix();
-
+    const datetime = movie[0].datetime;
+    console.log(`from:BookMyShow subject:Your Tickets after:${datetime}`)
     oAuth2Client.setCredentials({ access_token: user.accessToken });
 
     const gmail = google.gmail({ version: "v1", auth: oAuth2Client });

@@ -30,4 +30,14 @@ router.post("/background/:userId", async (req, res) => {
   }
 });
 
+router.get("/:userId", async(req, res) => {
+  try{
+    const user = await User.findById(req.params.userId);
+    res.status(200).json(user);
+  } catch(e){
+    console.log("Error fetching user details", e);
+    res.status(500).json(e);
+  }
+})
+
 module.exports = router;

@@ -20,7 +20,7 @@ const getLastMovie = async (userId) => {
   try {
     const doc = await Ticket.find({ userId: userId })
       .limit(1)
-      .sort({ createdAt: 1 });
+      .sort({ datetime: -1 });
     return doc;
   } catch (e) {
     throw e;

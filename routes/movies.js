@@ -21,50 +21,21 @@ router.get("/lists/:userId", async (req, res) => {
   }
 });
 
-// router.get("/watchlist/:userId", async (req, res) => {
-//   const { userId } = req.params;
-//   try {
-//     const user = await User.findById(userId).populate({
-//       path: "watchlist",
-//       select: "img tmdbId",
-//     });
-//     res.status(200).json({ watchlist: user.watchlist });
-//   } catch (e) {
-//     console.log("Error fetching watchlist", e);
-//     res.status(500).json(e);
-//   }
-// });
-
-// router.get("/favorite/:userId", async (req, res) => {
-//   const { userId } = req.params;
-//   try {
-//     const user = await User.findById(userId).populate({
-//       path: "favorite",
-//       select: "img tmdbId",
-//     });
-//     res.status(200).json({ favorite: user.favorite });
-//   } catch (e) {
-//     console.log("Error fetching favorite", e);
-//     res.status(500).json(e);
-//   }
-// });
-
 router.post("/add/:list/:userId", async (req, res) => {
-  const { userId, list } = req.params;
-  const movie = req.body.movieId;
-  let movieId = movie._id ?? "";
   try {
+    const { userId, list } = req.params;
+    const { movieDetails } = req.body;
     const user = await User.findById(userId);
-    let existingMovie = await Movie.findOne({ title: movie.title });
-    if (existingMovie) {
-      movieId = existingMovie._id;
-    } else {
-      existingMovie = await new Movie(movie).save();
-      movieId = existingMovie._id;
-    }
-    user[list].push(movieId);
+    
+    let existingMovie = await Movie.findOneAndUpdate(
+      { tmdbId: movieDetails.tmdbId },
+      movieDetails,
+      { upsert: true, new: true }
+    );
+    user[list].push(existingMovie._id);
     await user.save();
-    res.status(200).json({ movie: existingMovie });
+    
+    res.status(200).json({list: [list], type: 'add', movie: existingMovie});
   } catch (e) {
     console.log("Error adding movie to list", e);
     res.status(500).json(e);
@@ -72,21 +43,20 @@ router.post("/add/:list/:userId", async (req, res) => {
 });
 
 router.post("/delete/:list/:userId", async (req, res) => {
-  const { userId, list } = req.params;
-  const movie = req.body.movieId;
-  let movieId = movie._id ?? "";
   try {
+    const { userId, list } = req.params;
+    const {movieDetails} = req.body;
     const user = await User.findById(userId);
-    let existingMovie = await Movie.findOne({ title: movie.title });
-    if (existingMovie) {
-      movieId = existingMovie._id;
-    } else {
-      existingMovie = await new Movie(movie).save();
-      movieId = existingMovie._id;
+
+    const movieIndex = user[list].indexOf(movieDetails._id);
+    if (movieIndex === -1) {
+      return res.status(404).json({ error: "Movie not found in the list" });
     }
-    await user[list].pull(movieId);
+
+    user[list].splice(movieIndex, 1);
     await user.save();
-    res.status(200).json({ movie: existingMovie });
+
+    res.status(200).json({ list: [list], type: 'remove', movie: movieDetails });
   } catch (e) {
     console.log("Error deleting movie from list", e);
     res.status(500).json(e);
