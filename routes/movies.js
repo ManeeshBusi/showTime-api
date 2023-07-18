@@ -10,10 +10,7 @@ router.post("/add");
 router.get("/lists/:userId", async (req, res) => {
   const { userId } = req.params;
   try {
-    const user = await User.findById(userId).populate([
-      { path: "watchlist", select: "img tmdbId title bg" },
-      { path: "favorite", select: "img tmdbId title bg" },
-    ]);
+    const user = await User.findById(userId).populate(["watchlist", "favorite"]);
     res.status(200).json({ watchlist: user.watchlist, favorite: user.favorite });
   } catch (e) {
     console.log("Error fetching watchlist", e);

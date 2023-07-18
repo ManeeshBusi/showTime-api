@@ -36,10 +36,28 @@ router.post("/add/:userId", async (req, res) => {
     };
 
     const savedTicket = await new Ticket(ticketDetails).save();
-    const populatedTicket = await Ticket.find({_id: savedTicket._id}).populate("movieId");
+    const populatedTicket = await Ticket.find({
+      _id: savedTicket._id,
+    }).populate("movieId");
     res.status(200).send(populatedTicket);
   } catch (e) {
     console.log("Error adding ticket", e);
+    res.status(500).json(e);
+  }
+});
+
+router.post("/change/:ticketId", async (req, res) => {
+  const { ticketId } = req.params;
+  const { title, tmdbId } = req.body;
+
+  try {
+    const movieId = await getMovieDetails(title, tmdbId);
+    // const updatedTicket = await Ticket.findByIdAndUpdate(ticketId, { movieId });
+    const updatedTicket = await Ticket.findByIdAndUpdate(ticketId, {movieId: movieId}, {new: true});
+    const populatedTicket = await Ticket.findById(ticketId).populate("movieId");
+    res.status(200).json(populatedTicket);
+  } catch (e) {
+    console.log("Error updating ticket", e);
     res.status(500).json(e);
   }
 });

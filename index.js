@@ -1,13 +1,9 @@
 const express = require("express");
-const { google } = require("googleapis");
-const { XMLParser } = require("fast-xml-parser");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const cors = require("cors");
-const fetch = require("node-fetch");
-const { getColorFromURL } = require("color-thief-node");
 
 const authRoute = require("./routes/auth");
 const gmailRoute = require("./routes/gmail");

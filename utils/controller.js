@@ -2,7 +2,7 @@ const { XMLParser } = require("fast-xml-parser");
 const fetch = require("node-fetch");
 const User = require("../models/User");
 const Movie = require("../models/Movie");
-const { getColorFromURL } = require("color-thief-node");
+const Vibrant = require("node-vibrant");
 const Ticket = require("../models/Ticket");
 
 const getUser = async (userId) => {
@@ -27,44 +27,26 @@ const getLastMovie = async (userId) => {
   }
 };
 
-const getMovieDetails = async (name, date) => {
+const getMovieDetails = async (name, id) => {
   var movieId = "";
   let tmdbId = "";
-
-  let movie = await Movie.findOne({ title: name });
+  let movie = {};
+  if (id) {
+    tmdbId = id;
+    movie = await Movie.findOne({ title: name, tmdbId });
+  } else {
+    movie = await Movie.findOne({ title: name });
+  }
   if (movie) {
     console.log("MOVIE IS THERE", name);
   } else {
-    let year = date.split(",")[2].trim();
-
-    if (name == "The Whale") {
-      year = "2022";
+    if (!id) {
+      const res = await fetch(
+        process.env.TMDB_URL +
+          name.toLowerCase().replace(" ", "%20").replace("&", "%26")
+      ).then((data) => data.json());
+      tmdbId = res.results[0].id;
     }
-
-    if (name == "Jujutsu Kaisen 0") {
-      year = "2021";
-    }
-
-    const res = await fetch(
-      process.env.TMDB_URL +
-        name.toLowerCase().replace(" ", "%20").replace("&", "%26") +
-        `&year=${year}`
-    ).then((data) => data.json());
-
-    for (var i = 0; i < res.results.length; i++) {
-      if (name == "Beast") {
-        tmdbId = res.results[8].id;
-        break;
-      } else if (name == "Godfather") {
-        tmdbId = res.results[4].id;
-        break;
-      } else {
-        console.log("YEAR", year, name);
-        tmdbId = res.results[i].id;
-        break;
-      }
-    }
-
     const movieInfo = await fetch(
       `${process.env.TMDB_MOVIE}${tmdbId}?api_key=${process.env.TMDB_KEY}&language=en-US`
     ).then((res) => res.json());
@@ -75,13 +57,12 @@ const getMovieDetails = async (name, date) => {
       genres: genres,
       runtime: runtime,
     } = movieInfo;
-
     let movieParams = {
-      bg: process.env.TMDB_BG + bg,
-      img: process.env.TMDB_POSTER + img,
-      overview,
-      genres,
-      runtime,
+      bg: bg === null ? null : process.env.TMDB_BG + bg,
+      img: img === null ? null : process.env.TMDB_POSTER + img,
+      overview: overview ?? "",
+      genres: genres ?? [],
+      runtime: runtime ?? 0,
       title: name,
       tmdbId,
     };
@@ -92,12 +73,13 @@ const getMovieDetails = async (name, date) => {
         name: movieInfo.belongs_to_collection.name,
       };
     }
-
-    movieParams.language = movieInfo.spoken_languages
-      ? movieInfo.spoken_languages[0].english_name
-      : "";
-
-    let domColor = await getColorFromURL(process.env.TMDB_POSTER + img);
+    // movieParams.language = movieInfo?.spoken_languages? (movieInfo.spoken_languages[0]?.english_name ?? "") : "";
+    // let domColor = await getColorFromURL(process.env.TMDB_POSTER + img);
+    let palette = {};
+    if (img !== null) {
+      palette = await Vibrant.from(process.env.TMDB_POSTER + img).getPalette();
+    }
+    const domColor = palette?.Vibrant?.rgb ?? [19, 19, 19];
     movieParams.color = `rgba(${domColor[0]}, ${domColor[1]}, ${domColor[2]}, 0.96)`;
     const saveMovie = new Movie(movieParams);
     movie = await saveMovie.save();
@@ -108,7 +90,6 @@ const getMovieDetails = async (name, date) => {
 
 const messageParser = async (payload) => {
   const body = payload.parts[0].parts[1].body.data;
-
   const bodyText = Buffer.from(body, "base64").toString("ascii");
 
   const bodyObject = new XMLParser().parse(bodyText);
@@ -130,7 +111,7 @@ const messageParser = async (payload) => {
     ? dataTable.tr[2].td.span.split("- ")[1]
     : dataTable.tr[2].td.span.split("- ")[0];
 
-  const movieId = await getMovieDetails(name, date);
+  const movieId = await getMovieDetails(name);
   return { movieId, bookingId, time, date, screen, location, seats };
 };
 
