@@ -1,6 +1,5 @@
 const express = require("express");
 const Ticket = require("../models/Ticket");
-const Movie = require("../models/Movie");
 const { getMovieDetails } = require("../utils/controller");
 const router = express.Router();
 const moment = require("moment/moment");
@@ -22,7 +21,7 @@ router.post("/add/:userId", async (req, res) => {
   const { userId } = req.params;
   const { title, date, time, location, screen, seats } = req.body;
   try {
-    const movieId = await getMovieDetails(title, date);
+    const movieId = await getMovieDetails(title);
     const datetime = moment(date).unix();
     const ticketDetails = {
       date,
@@ -39,7 +38,7 @@ router.post("/add/:userId", async (req, res) => {
     const populatedTicket = await Ticket.find({
       _id: savedTicket._id,
     }).populate("movieId");
-    res.status(200).send(populatedTicket);
+    res.status(200).json(populatedTicket);
   } catch (e) {
     console.log("Error adding ticket", e);
     res.status(500).json(e);
@@ -52,8 +51,7 @@ router.post("/change/:ticketId", async (req, res) => {
 
   try {
     const movieId = await getMovieDetails(title, tmdbId);
-    // const updatedTicket = await Ticket.findByIdAndUpdate(ticketId, { movieId });
-    const updatedTicket = await Ticket.findByIdAndUpdate(ticketId, {movieId: movieId}, {new: true});
+    await Ticket.findByIdAndUpdate(ticketId, {movieId: movieId});
     const populatedTicket = await Ticket.findById(ticketId).populate("movieId");
     res.status(200).json(populatedTicket);
   } catch (e) {
